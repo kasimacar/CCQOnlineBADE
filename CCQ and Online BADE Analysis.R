@@ -33,7 +33,7 @@ library(psych)
 
 
 # Load data
-load("CCQDataGitHub.RData")
+load("CCQBADEAnalysisBC.RData")
 
 
 
@@ -113,6 +113,31 @@ cor.test(AllCMQ$CONS5, AllCMQ$CCQTot)
 cor.test(databadeall$EIINorm, databadeall$CCQTotNorm)
 
 
+# Pearson's correlation PDI-Non-paranoia
+
+cor.test(AllCovidNP$PDI, AllCovidNP$CCQTot)
+cor.test(AllCovidNP$PDI, AllCovidNP$CCQFeaAct)
+cor.test(AllCovidNP$PDI, AllCovidNP$CCQCon)
+cor.test(AllCovidNP$PDI, AllCovidNP$CCQDis)
+
+jmv::corrMatrix(
+  data = AllCovid,
+  vars = vars(CCQFeaAct, CCQDis, CCQCon, CCQTot, PDI),
+  plotDens = TRUE,
+  plotStats = TRUE)
+
+
+cor.test(databadeall$PDI_total, databadeall$CCQTot)
+cor.test(databadeall$PDI_total, databadeall$CCQFeaAct)
+cor.test(databadeall$PDI_total, databadeall$CCQCon)
+cor.test(databadeall$PDI_total, databadeall$CCQDis)
+
+jmv::corrMatrix(
+  data = databadeall,
+  vars = vars(CCQFeaAct, CCQDis, CCQCon, CCQTot, PDI_total),
+  plotDens = TRUE,
+  plotStats = TRUE)
+
 
 #create data frame for correlogram
 myDataCorr <- data.frame(PDI = databadeall$PDINorm, EII = databadeall$EIINorm, CCQTot = databadeall$CCQTotNorm)
@@ -158,11 +183,10 @@ jmv::pca(
   factorSummary = TRUE)
 
 
-
 # Mutliple Regression: PDI + CCQ. N = 617
 ## PDI + control for demographics + diagnosis + CCQTot ##
 
-ModelSCRCVPt <- lm(PDI ~ Age+Sex+Education+Diagnosis+CCQTot,
+ModelSCRCVPt <- lm(PDI ~ Age+Sex+Education+Diagnosis+CCQTot+ASRS+RAADSY+RAADSN+RAADSB,
                    data= AllCovid)
 
 # Excluding variables of interest for residual extraction
@@ -180,9 +204,10 @@ plotNormalHistogram(ModelSCRCVPt.res)
 # Summarize results
 summary(ModelSCRCVPt)
 summ(ModelSCRCVPt)
+beta(ModelSCRCVPt)
 
 # PDI + control for demographics + diagnosis
-ModelSCRCVPp <- lm(PDI ~ Age+Sex+Education+Diagnosis+CCQFeaAct+CCQDis+CCQCon,
+ModelSCRCVPp <- lm(PDI ~ Age+Sex+Education+Diagnosis+CCQFeaAct+CCQDis+CCQCon+ASRS+RAADSY+RAADSN+RAADSB,
                    data= AllCovid)
 
 # excluding variables of interest
@@ -206,11 +231,11 @@ summary(ModelSCRCVPp)
 myDataAll <- data.frame(Age = databadeall$age.x, Sex = databadeall$genderm1, CCQFeaAct = databadeall$CCQFeaAct, CCQDis = databadeall$CCQDis,
                         CCQCon = databadeall$CCQCon, PDI = databadeall$PDI_total, Schizotypy = databadeall$DP, OLIFE = databadeall$OLIFE_tot,
                         EII = databadeall$EII1score, EII2 = databadeall$EII2score, Education = databadeall$education, CCQTot = databadeall$CCQTot,
-                        Diagnosis = databadeall$PsychDiagAny)
+                        Diagnosis = databadeall$PsychDiagAny, ASRS = databadeall$ASRSLog, RAADSY = databadeall$raads_young, RAADSN = databadeall$raads_now, RAADSB = databadeall$raads_both)
 
 
 # PDI and EII + control for demographics + diagnosis
-ModelPDI <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI,
+ModelPDI <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI+ASRS+RAADSY+RAADSN+RAADSB,
                data= myDataAll)
 
 
@@ -229,7 +254,7 @@ summary(ModelPDI)
 
 
 # EII + Total CCQ
-ModelFull1 <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI+CCQTot,
+ModelFull1 <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI+CCQTot+ASRS+RAADSY+RAADSN+RAADSB,
                  data= myDataAll)
 
 
@@ -242,10 +267,13 @@ plotNormalHistogram(ModelFull1.res)
 
 # Summarize results
 summary(ModelFull1)
+beta(ModelFull1)
 
 # Full model with Covid questions as separate components
-ModelFull2 <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI+CCQFeaAct+CCQDis+CCQCon,
+ModelFull2 <- lm(EII ~ Age+Sex+Education+Diagnosis+PDI+CCQFeaAct+CCQDis+CCQCon+ASRS+RAADSY+RAADSN+RAADSB,
                  data= myDataAll)
+
+
 
 
 # Summarize results
@@ -441,7 +469,7 @@ MeMoCCQComp <- grViz('
       "EII"-> "CCQ \\n Conspiracy" [label ="β = 0.24***", fontsize = 10, penwidth = 2, color = "#50b8fa", fontcolor = "#50b8fa"];
       "EII"-> "CCQ \\n Fear/Action" [label ="    β = -0.11", fontsize = 10, color = "#50b8fa",  style = dotted, fontcolor = "#50b8fa"];
       "PDI"->"CCQ \\n Distrust" [label ="    β = 0.33***", fontsize = 10, penwidth = 2, fontcolor = grey];
-      "PDI"->"CCQ \\n Conspiracy" [label ="β = 0.32***", fontsize = 10, penwidth = 2, fontcolor = grey];
+      "PDI"->"CCQ \\n Conspiracy" [label ="β = 0.28***", fontsize = 10, penwidth = 2, fontcolor = grey];
       "PDI"->"CCQ \\n Fear/Action" [label ="β = -0.04", fontsize = 10, style = dotted, fontcolor = grey];
       }
       ')
