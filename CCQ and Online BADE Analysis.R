@@ -479,3 +479,106 @@ MeMoCCQComp <- grViz('
 MeMoCCQComp
 
 
+# create new data frame with only CCQ items
+nSCRCVP <- data.frame(databadeall$CV1,databadeall$CV2, databadeall$CV3,
+                      databadeall$CV4, databadeall$CV5, databadeall$CV6,
+                      databadeall$CV7, databadeall$CV8, databadeall$CV9,
+                      databadeall$CV10, databadeall$CV11, databadeall$CV12,
+                      databadeall$CV13, databadeall$CV14, databadeall$CV15, 
+                      databadeall$CV16, databadeall$CV17, databadeall$CV18,
+                      databadeall$CV19, databadeall$CV20, databadeall$CV21,
+                      databadeall$CV22)
+
+
+#databadeall
+
+nspc <- nsprcomp(nSCRCVP, k = c(2,2,2,3,3,3,5,5,5), nneg = F, scale. = T,
+                 nrestart = 50, em_tol = 1e-4, verbosity = 1,em_maxiter=5000)
+
+plot(nspc)
+
+scc5 <- nscumcomp(nSCRCVP, ncomp = 5, k = 20, gamma = 1e4, scale. = TRUE, nneg = T,
+                  nrestart = 50, em_tol = 1e-4, verbosity = 1,em_maxiter=5000)
+plot(scc5)
+
+# Model with 3 components:
+set.seed(3456)
+scc <- nscumcomp(nSCRCVP, ncomp = 3, k = 20, gamma = 1e4, scale. = TRUE, nneg = T,
+                 nrestart = 50, em_tol = 1e-4, verbosity = 1,em_maxiter=5000)
+
+plot(scc)
+
+
+databadeall$cpcCONSP <- scc$x[,1]
+databadeall$cpcDistrust  <- scc$x[,2]
+databadeall$cpcFearAct <- scc$x[,3]
+
+
+
+cPCAmod_PDI <- lm(PDI_total ~ age.x+sex+education+PsychDiagAny+cpcCONSP+cpcFearAct+cpcDistrust,
+                 data= databadeall)
+
+summary(cPCAmod_PDI)
+
+
+cPCAmod_EII1 <- lm(EII1score ~ age.x+sex+education+PsychDiagAny+cpcCONSP+cpcFearAct+cpcDistrust,
+                  data= databadeall)
+summary(cPCAmod_EII1)
+
+
+#########
+# PCR:
+#######
+
+nSCRCVP <- data.frame(databadeall$CV1,databadeall$CV2, databadeall$CV3,
+                      databadeall$CV4, databadeall$CV5, databadeall$CV6,
+                      databadeall$CV7, databadeall$CV8, databadeall$CV9,
+                      databadeall$CV10, databadeall$CV11, databadeall$CV12,
+                      databadeall$CV13, databadeall$CV14, databadeall$CV15, 
+                      databadeall$CV16, databadeall$CV17, databadeall$CV18,
+                      databadeall$CV19, databadeall$CV20, databadeall$CV21,
+                      databadeall$CV22)
+
+nSCRCVP$EII <- databadeall$EII1score
+
+
+
+# Fit principal comp regression on PDI total with leave-one-out validation
+pcr <- pcr(EII~., scale = TRUE, data =nSCRCVP, validation='LOO',ncomp=10, jackknife=T)
+
+# Check which model fits best based on RMSEP and explained variance
+plot(pcr,'validation') # best with 1 components, then error growths
+pcr <- pcr(EII~., scale = TRUE, data =nSCRCVP, validation='LOO',ncomp=1, jackknife=T)
+
+summary(pcr) # 
+
+# Loadings:
+pcr$loadings
+
+# PCR score is essentially the conspiracy component from sparse PCA:
+plot(pcr$scores[,1], scc$x[,1], pch=16)
+cor.test(pcr$scores[,1], scc$x[,1])
+
+
+# Check predictive value of each of the 22 features in this 4-component solution for PDI:
+jack.test(pcr)
+
+
+library(spls)
+d <- as.matrix(nSCRCVP)
+d <- d[complete.cases(d),]
+colnames(d) <- c()
+cv <- cv.spls(d[,1:22], d[,23], K = c(1:5), eta = seq(0.1,0.9,0.1),
+               scale.x=FALSE, fold=5)
+
+
+
+splsMod <- spls(d[,1:22], d[,23], eta=cv$eta.opt, K=cv$K.opt)
+pred.f <- predict(splsMod, type="fit" )
+comps <- cbind(scc$x[,1], pcr$scores[,1],pred.f)
+
+colnames(comps) <- c('SPCAconsp','PCR', 'SPLS')
+cor(comps)
+
+
+
