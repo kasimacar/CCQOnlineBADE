@@ -119,7 +119,7 @@ abline(glm(SCRCVP$Delta_time~SCRCVP$PDI_total), col = 1, lwd = 3)
 
 # Creating logistic regression models for the prediction of vaccination
 
-# model1 -  DI total and vaccination
+# model1 -  PDI total and vaccination
 logmodel1=glm(SCRCVP$vaccination~PDI_total, data = SCRCVP, family='binomial')
 
 # summarize logmodel results
@@ -314,8 +314,22 @@ lintbls_merged_age <- tbl_merge(list(lintbl1, lintbl2, lintbl3, lintbl5),
 
 #save table as editable word
 
-#lintbls_merged %>% as_flex_table() %>%
-# flextable::save_as_docx(path = here(paste0('linear_tbls_merged', ".docx")))
+# linear table 1
+lintbls_merged %>% as_flex_table() %>%
+flextable::save_as_docx(path = here(paste0('lintbls_merged', ".docx")))
+
+#linear table 2 age
+lintbls_merged_age %>% as_flex_table() %>%
+  flextable::save_as_docx(path = here(paste0('lintbls_merged_age', ".docx")))
+
+
+# log table 1
+logtbls_merged %>% as_flex_table() %>%
+  flextable::save_as_docx(path = here(paste0('logtbls_merged', ".docx")))
+
+#log table 2 age
+logtbls_merged_age %>% as_flex_table() %>%
+  flextable::save_as_docx(path = here(paste0('logtbls_merged_age', ".docx")))
 
 
 # test interaction PDI * STAI
@@ -617,5 +631,10 @@ descriptive_tbl <-
     modify_header(
       stat_1 ~ "**Vaccinated**, \nN = {n}",
       stat_2 ~ "**Unvaccinated**, \nN = {n}")
+
+# export descriptive table in editable word document
+
+descriptive_tbl %>% as_flex_table() %>%
+  flextable::save_as_docx(path = here(paste0('descriptive_tbl', ".docx")))
 
 
